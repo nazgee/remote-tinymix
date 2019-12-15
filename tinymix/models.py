@@ -33,5 +33,8 @@ class Value(models.Model):
     value_name = models.CharField('value name', max_length=200)
     value_id = models.IntegerField('value id')
 
+    def get_command(self):
+        return "tinymix " + str(self.parent.control_id) + " " + str(self.value_id)
+
     def __str__(self):
         return "<" + str(self.value_id) + ": " + self.value_name + " @ " + str(self.parent.control_id) + ">"

@@ -3,6 +3,6 @@
 <h1>{{ control.name }}</h1>
 <ul>
 {% for value in control.value_set.all %}
-    <li><a href={% url 'edit' value.id %}>{{ value }}</a></li>
+    <li><a href={% url 'tinymix:edit' value.id %}>{{ value }}</a></li>
 {% endfor %}
 </ul>

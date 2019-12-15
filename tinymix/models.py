@@ -10,7 +10,7 @@ class Config(models.Model):
     created_date = models.DateTimeField('date created')
 
     def __str__(self):
-        return self.name + " pk=" + str(self.pk) + " control_set=" + self.control_set.all().__str__()
+        return "<" + self.name + " control_set=" + self.control_set.all().__str__() + ">"
 
     def was_created_recently(self):
         return self.created_date >= timezone.now() - datetime.timedelta(hours=1)
@@ -20,16 +20,16 @@ class Control(models.Model):
     config = models.ForeignKey(Config, on_delete=models.CASCADE)
     control_name = models.CharField('control name', max_length=200)
     control_index = models.IntegerField('control index')
-    value_name = models.CharField('current value', max_length=200)
+    value_current = models.ForeignKey('Value', on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.control_name + "@" + str(self.control_index) + "=" + self.value_name + " " + str(Value.objects.filter(control=self))
+        return "<" + str(self.control_index) + ": " + self.control_name + " current=" + str(self.value_current) + ">"
 
 
 class Value(models.Model):
-    control = models.ForeignKey(Control, on_delete=models.CASCADE)
+    parent = models.ForeignKey(Control, on_delete=models.CASCADE)
     value_name = models.CharField('value name', max_length=200)
     value_index = models.IntegerField('value index')
 
     def __str__(self):
-        return self.value_name + "@" + str(self.value_index)
+        return "<" + str(self.value_index) + ": " + self.value_name + ">"

@@ -1,22 +1,47 @@
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from _socket import timeout
+
+from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpRequest
 from django.shortcuts import render, get_object_or_404
 from django.template import loader
 from django.urls import reverse
+from django.views import generic
 
-from tinymix.models import Config, Control, Value
-
-
-def index(request):
-    latest_configs_list = Config.objects.order_by('-created_date')[:5]
-    context = {
-        'latest_configs_list': latest_configs_list,
-    }
-    return render(request, 'tinymix/index.html', context)
+from tinymix.models import Config, Control, Value, ConfigManager
 
 
-def config(request, config_id):
-    config = get_object_or_404(Config, pk=config_id)
-    return render(request, 'tinymix/config.html', {'config': config})
+class IndexView(generic.ListView):
+    model = Config
+    template_name = 'tinymix/index.html'
+    context_object_name = 'latest_configs_list'
+
+    def render(self, request, context: dict = {}):
+        context[self.context_object_name] = self.get_queryset()
+
+        return render(request, self.template_name, context)
+
+    def get_queryset(self):
+        """Return the last five published Configs."""
+        return Config.objects.order_by('-created_date')[:5]
+
+
+def config_new(request):
+    cfg = Config.objects.create_config("neww", 0)
+
+    if cfg is not Config:
+        print("foo")
+        return IndexView().render(request, context={"error_message": "Config creation failed! " + str(cfg)})
+
+    return HttpResponseRedirect(reverse('tinymix:index'))
+
+
+class DetailView(generic.DetailView):
+    model = Config
+    template_name = 'tinymix/config.html'
+
+
+# def config(request, config_id):
+#     config = get_object_or_404(Config, pk=config_id)
+#     return render(request, 'tinymix/config.html', {'config': config})
 
 
 def control(request, control_id):

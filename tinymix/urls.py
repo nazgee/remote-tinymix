@@ -6,9 +6,9 @@ urlpatterns = [
     # ex: /tinymix/
     path('', views.index, name='index'),
     # ex: /tinymix/5/
-    path('<int:config_id>/', views.detail, name='detail'),
+    path('config/<int:config_id>/', views.detail, name='detail'),
     # ex: /tinymix/5/results/
-    path('<int:question_id>/values/', views.values, name='values'),
+    path('control/<int:control_id>', views.control, name='control'),
     # ex: /tinymix/5/vote/
-    path('<int:question_id>/edit/', views.edit, name='edit'),
+    path('edit/<int:value_id>', views.edit, name='edit'),
 ]

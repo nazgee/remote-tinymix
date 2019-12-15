@@ -2,7 +2,7 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from django.template import loader
 
-from tinymix.models import Config
+from tinymix.models import Config, Control, Value
 
 
 def index(request):
@@ -12,13 +12,19 @@ def index(request):
     }
     return render(request, 'tinymix/index.html', context)
 
+
 def detail(request, config_id):
     config = get_object_or_404(Config, pk=config_id)
     return render(request, 'tinymix/detail.html', {'config': config})
 
-def values(request, control_index):
-    response = "You're looking at the values of control %s."
-    return HttpResponse(response % control_index)
 
-def edit(request, control_index):
-    return HttpResponse("You're editing control %s." % control_index)
+def control(request, control_id):
+    # response = "You're looking at control %s."
+    # return HttpResponse(response % control_id)
+    control = get_object_or_404(Control, pk=control_id)
+    return render(request, 'tinymix/control.html', {'control': control})
+
+
+def edit(request, value_id):
+    value = get_object_or_404(Value, pk=value_id)
+    return render(request, 'tinymix/value.html', {'value': value})

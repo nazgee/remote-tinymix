@@ -4,6 +4,6 @@
 {{ config.created_date }}
 <ul>
 {% for control in config.control_set.all %}
-    <li>{{ control }}</li>
+    <li><a href={% url 'control' control.id %}>{{ control }}</a></li>
 {% endfor %}
 </ul>

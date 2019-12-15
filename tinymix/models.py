@@ -21,6 +21,7 @@ class Control(models.Model):
     config = models.ForeignKey(Config, on_delete=models.CASCADE)
     control_name = models.CharField('control name', max_length=200)
     control_id = models.IntegerField('control id')
+    # note: instead of giving class name we "introspect"
     value_current = models.ForeignKey('Value', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -33,4 +34,4 @@ class Value(models.Model):
     value_id = models.IntegerField('value id')
 
     def __str__(self):
-        return "<" + str(self.value_id) + ": " + self.value_name + ">"
+        return "<" + str(self.value_id) + ": " + self.value_name + " @ " + str(self.parent.control_id) + ">"

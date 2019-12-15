@@ -1,7 +1,9 @@
 {% if latest_configs_list %}
     <ul>
     {% for config in latest_configs_list %}
-        <li><a href="/tinymix/{{ config.id }}/">{{ config.name }}</a></li>
+
+        <li><a href={% url 'detail' config.id %}>{{ config.name }}</a></li>
+        <!-- <li><a href="/tinymix/{{ config.id }}/">{{ config.name }}</a></li> -->
     {% endfor %}
     </ul>
 {% else %}

@@ -1,0 +1,9 @@
+{{ config }}
+
+<h1>{{ config.name }}</h1>
+{{ config.created_date }}
+<ul>
+{% for control in config.control_set.all %}
+    <li>{{ control }}</li>
+{% endfor %}
+</ul>

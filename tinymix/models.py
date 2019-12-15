@@ -10,7 +10,7 @@ class Config(models.Model):
     created_date = models.DateTimeField('date created')
 
     def __str__(self):
-        return self.name
+        return self.name + " pk=" + str(self.pk) + " control_set=" + self.control_set.all().__str__()
 
     def was_created_recently(self):
         return self.created_date >= timezone.now() - datetime.timedelta(hours=1)
@@ -23,7 +23,7 @@ class Control(models.Model):
     value_name = models.CharField('current value', max_length=200)
 
     def __str__(self):
-        return self.control_name + "@" + str(self.control_index)
+        return self.control_name + "@" + str(self.control_index) + "=" + self.value_name + " " + str(Value.objects.filter(control=self))
 
 
 class Value(models.Model):
@@ -33,14 +33,3 @@ class Value(models.Model):
 
     def __str__(self):
         return self.value_name + "@" + str(self.value_index)
-
-
-class Question(models.Model):
-    question_text = models.CharField(max_length=200)
-    pub_date = models.DateTimeField('date published')
-
-
-class Choice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=200)
-    votes = models.IntegerField(default=0)

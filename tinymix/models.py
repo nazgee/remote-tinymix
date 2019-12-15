@@ -8,20 +8,25 @@ from django.utils import timezone
 
 from adb_shell.adb_device import AdbDeviceTcp
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
+from adb_shell.auth.keygen import keygen
 
 from django.db import models
 
 
 class ConfigManager(models.Manager):
+    keygen("/tmp/adbkey")
+
     def create_config(self, name, device_id):
         config = self.create(name=name, device_id=device_id, created_date=timezone.now())
 
         try:
-            device1 = AdbDeviceTcp('192.168.1.148', 5555, default_timeout_s=1.)
-            device1.connect(auth_timeout_s=0.5)
-            with open('/home/michal/.android/adbkey') as f:
+            with open('/tmp/adbkey') as f:
                 priv = f.read()
             signer = PythonRSASigner('', priv)
+
+            device = AdbDeviceTcp('192.168.1.148', 5555, default_timeout_s=1.)
+            device.connect(rsa_keys=[signer], auth_timeout_s=10.5)
+
         except Exception as e:
             print("Destroying invalid config! " + str(e))
             config.delete()

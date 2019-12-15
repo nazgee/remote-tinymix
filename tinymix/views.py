@@ -27,9 +27,11 @@ class IndexView(generic.ListView):
 def config_new(request):
     cfg = Config.objects.create_config("neww", 0)
 
-    if cfg is not Config:
+    if not isinstance(cfg, Config):
         print("foo")
         return IndexView().render(request, context={"error_message": "Config creation failed! " + str(cfg)})
+
+    cfg.delete()
 
     return HttpResponseRedirect(reverse('tinymix:index'))
 

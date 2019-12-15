@@ -5,15 +5,14 @@
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-<form action="{% url 'tinymix:control_edit' control.id %}" method="post">
+<form action="{% url 'tinymix:control/publish' control.id %}" method="post">
 {% csrf_token %}
 {% for value in control.value_set.all %}
     <input type="radio"
-           name="newvalue"
-           id="newvalue{{ forloop.counter }}"
-           value="{{ value.id }}">
-
-    <label for="newvalue{{ forloop.counter }}"> {{ value }}</label>
+           name="value_pk"
+           value="{{ value.id }}"
+           id="value{{ forloop.counter }}">
+    <label for="value{{ forloop.counter }}"> {{ value }}</label>
     <br>
 {% endfor %}
 <input type="submit" value="Apply">

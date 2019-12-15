@@ -53,10 +53,10 @@ def control(request, control_id):
     return render(request, 'tinymix/control.html', {'control': c})
 
 
-def control_edit(request, control_id):
+def control_publish(request, control_id):
     ctrl = get_object_or_404(Control, pk=control_id)
     try:
-        val = ctrl.value_set.get(pk=request.POST['newvalue'])
+        val = ctrl.value_set.get(pk=request.POST['value_pk'])
     except (KeyError, Value.DoesNotExist):
         # Redisplay the question voting form.
         return render(request, 'tinymix/control.html', {

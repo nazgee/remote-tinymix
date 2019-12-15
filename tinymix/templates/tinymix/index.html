@@ -4,10 +4,13 @@
 
 <h1>New config</h1>
 
-<form action="{% url 'tinymix:config_new' %}" method="post">
+<form action="{% url 'tinymix:config/new' %}" method="post">
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
     {% csrf_token %}
-    <input type="submit" value="Load controls">
+    <input type=text
+           value="192.168.1.148">
+    <input type="submit"
+           value="Load controls">
 </form>
 
 <h1>Load config</h1>

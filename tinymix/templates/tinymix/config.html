@@ -3,13 +3,13 @@
 <h1>{{ config.name }}</h1>
 {{ config.created_date }}
 
-<form action="{% url 'tinymix:config/reload' config.id %}" method="post">
+<form action="{% url 'tinymix:config/reload' config.id %}" method="post" onsubmit="return disableButtons(this);">
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
     {% csrf_token %}
     <input type=text
            name="ip"
            value={{ ipaddr }}>
-    <input type="submit" name="download" value="Download">
+    <input type="submit" name="download" value="Download"  >
     <input type="submit" name="upload" value="Upload">
     <input type="submit" name="save" value="Save">
 </form>
@@ -30,3 +30,12 @@
 
 </table>
 
+<script type="text/javascript">
+    function disableButtons(form)
+    {
+        form.download.value = "Wait..."
+        form.upload.value = "Wait..."
+        form.save.value = "Wait..."
+        return true;
+    }
+</script>

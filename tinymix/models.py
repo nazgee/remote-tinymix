@@ -43,9 +43,9 @@ def fetch_controls(ip, device_id):
 
 
 class ConfigManager(models.Manager):
-    def dynamic_refresh(self, device_id, config_pk, ip=None):
+    def dynamic_refresh(self, device_id, pk, ip=None):
         try:
-            cfg = Config.objects.get(pk=config_pk)
+            cfg = Config.objects.get(pk=pk)
 
             fetched_controls = fetch_controls(ip, device_id)
             for fresh in fetched_controls:
@@ -135,7 +135,7 @@ class ControlManager(models.Manager):
                 value = Value.objects.create_value(value_id=switcher[key],
                                                    value_name=key,
                                                    parent_control=control)
-                print("bool key='" + key + "' value='" + value_name + "' name=" + control_name)
+                # print("bool key='" + key + "' value='" + value_name + "' name=" + control_name)
                 if key == value_name:
                     control.store_value(value)
 
@@ -157,8 +157,8 @@ class ControlManager(models.Manager):
                     current = True
                     value_name = value_name.strip(">")
 
-                print("need Value: " + str(value_id) + " '" + value_name + "' curr=" + str(current) + " for " + str(
-                    control))
+                # print("need Value: " + str(value_id) + " '" + value_name + "' curr=" + str(current) + " for " + str(
+                #     control))
 
                 value = Value.objects.create_value(value_id=value_id,
                                                    value_name=value_name,
@@ -191,6 +191,10 @@ class Control(models.Model):
         super(Control, self).__init__(*args, **kwargs)
         # self.value_dynamic = None
 
+    def store_value_by_name(self, value_name):
+        value = self.value_set.get(value_name=value_name)
+        self.store_value(value)
+
     def store_value(self, value):
         self.value_stored = value
         self.save()
@@ -209,12 +213,16 @@ class Control(models.Model):
             return str(self.value_readback)
 
     def apply_and_save(self, value, ip=None):
-        value.apply(ip)
-        self.value_stored = value
-        self.save()
+        self.apply(value, ip)
+        self.store_value(value)
+
+    def apply_stored(self, ip=None):
+        self.value_stored.apply(ip)
+        self.value_readback = self.value_stored.value_name
 
     def apply(self, value, ip=None):
         value.apply(ip)
+        self.value_readback = value.value_name
 
 
 class ValueManager(models.Manager):

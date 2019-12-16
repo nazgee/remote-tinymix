@@ -1,3 +1,4 @@
+<a href={% url 'tinymix:config' control.config.pk %}> back to config</a>
 <h1>{{ control.control_name }}</h1>
 <h2>{{ control }}</h2>
 
@@ -5,7 +6,7 @@
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-<form action="{% url 'tinymix:control/publish' control.id %}" method="post">
+<form action="{% url 'tinymix:control/publish' control.id %}" method="post" onsubmit="return disableButtons(this);">
 {% csrf_token %}
 {% for value in control.value_set.all %}
     <input type="radio"
@@ -32,3 +33,11 @@
 {% endfor %}
 </ul>
 
+<script type="text/javascript">
+    function disableButtons(form)
+    {
+        form.apply.value = "Wait..."
+        form.apply_and_save.value = "Wait..."
+        return true;
+    }
+</script>

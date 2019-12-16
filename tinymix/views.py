@@ -21,7 +21,7 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         """Return the last five published Configs."""
-        return Config.objects.order_by('-created_date')[:5]
+        return Config.objects.order_by('-created_date')
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
@@ -52,7 +52,27 @@ class DetailView(generic.DetailView):
 
 
 def config_reload(request, pk):
-    Config.objects.dynamic_refresh(ip=request.POST['ip'], device_id=0, config_pk=pk)
+    ip = None
+    try:
+        ip = request.POST['ip']
+    except:
+        pass
+
+
+    if "download" in request.POST:
+        Config.objects.dynamic_refresh(device_id=0, pk=pk, ip=ip)
+    elif "upload" in request.POST:
+        cfg = Config.objects.get(pk=pk)
+        for ctrl in cfg.control_set.all():
+            ctrl.apply_stored(ip)
+    elif "save" in request.POST:
+        cfg = Config.objects.get(pk=pk)
+        for ctrl in cfg.control_set.all():
+            ctrl.store_value_by_name(ctrl.value_readback)
+    else:
+        raise RuntimeError("This should never happen: " + str(request.POST))
+
+
     return HttpResponseRedirect(reverse('tinymix:config', args=(pk,)))
 
 # def config(request, config_id):
@@ -64,13 +84,14 @@ def control(request, control_id):
     # response = "You're looking at control %s."
     # return HttpResponse(response % control_id)
     c = get_object_or_404(Control, pk=control_id)
-    return render(request, 'tinymix/control.html', {'control': c})
+    return render(request, 'tinymix/control.html', {'control': c, 'ipaddr': Adb.ip})
 
 
 def control_publish(request, control_id):
     ctrl = get_object_or_404(Control, pk=control_id)
     try:
         val = ctrl.value_set.get(pk=request.POST['value_pk'])
+        ip = request.POST['ip']
     except (KeyError, Value.DoesNotExist):
         # Redisplay the question voting form.
         return render(request, 'tinymix/control.html', {
@@ -79,13 +100,13 @@ def control_publish(request, control_id):
         })
     else:
         if "apply_and_save" in request.POST:
-            ctrl.apply_and_save(val)
+            ctrl.apply_and_save(val, ip)
         else:
-            ctrl.apply(val)
+            ctrl.apply(val, ip)
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        Config.objects.dynamic_refresh(device_id=0, config_pk=ctrl.config.pk)
+        Config.objects.dynamic_refresh(device_id=0, pk=ctrl.config.pk)
         return HttpResponseRedirect(reverse('tinymix:config', args=(ctrl.config.pk,)))
         # return render(request, 'tinymix/control_edit.html', {'value': val})
 

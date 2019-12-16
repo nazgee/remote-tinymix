@@ -1,8 +1,5 @@
 <a href={% url 'tinymix:config' control.config.pk %}> back to config</a>
 <h1>{{ control.control_name }}</h1>
-<h2>{{ control }}</h2>
-
-<h3> Apply tinymix command </h3>
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
@@ -11,7 +8,7 @@
 {% for value in control.value_set.all %}
     <input type="radio"
            name="value_pk"
-           {% if control.value_stored == value %} checked {% endif %}
+           {% if control.value_readback == value.get_label %} checked {% endif %}
            value="{{ value.id }}"
            id="value{{ forloop.counter }}">
     <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>

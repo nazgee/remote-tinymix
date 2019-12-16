@@ -14,28 +14,32 @@ class Adb:
     ip = "192.168.1.148"
 
     def get_device(new_ip):
-        if (new_ip is not None) and ((Adb.ip != new_ip) or (Adb.device is None)):
-            Adb.ip = new_ip
+        if Adb.ip != new_ip:
+            if new_ip is not None:
+                Adb.ip = new_ip
+            elif Adb.device is not None:
+                return Adb.device
+
             Adb.device = Adb.client.device(Adb.ip + ":5555")
             try:
                 Adb.device.root()
-            except:
-                pass
-
+            except Exception as e:
+                raise e
+            else:
+                return Adb.device
+        elif Adb.device is None:
+            Adb.device = Adb.client.device(Adb.ip + ":5555")
             return Adb.device
-        return Adb.device
+        else:
+            return Adb.device
 
 
 def fetch_controls(ip, device_id):
     # ('0', 'ENUM', '1', 'MIC Bias VCM Bandgap', 'High Performance')
-    try:
-        output = Adb.get_device(ip).shell("tinymix -D " + str(device_id))
-        controls = re.compile(r"^([0-9]+)\W+([A-Z]+)\W+([0-9]+)\W+([\w ]+?)[ \t]{2,}(.*)$",
-                              re.MULTILINE).findall(output)
-        return controls
-
-    except Exception as e:
-        return e
+    output = Adb.get_device(ip).shell("tinymix -D " + str(device_id))
+    controls = re.compile(r"^([0-9]+)\W+([A-Z]+)\W+([0-9]+)\W+([\w ]+?)[ \t]{2,}(.*)$",
+                          re.MULTILINE).findall(output)
+    return controls
 
 
 class ConfigManager(models.Manager):
@@ -49,14 +53,14 @@ class ConfigManager(models.Manager):
                 control_value_name = fresh[4]
                 try:
                     control_to_update = cfg.control_set.get(control_id=control_id)
-                    control_to_update.value_dynamic = control_value_name
+                    control_to_update.value_readback = control_value_name
                     control_to_update.save()
                 except Control.DoesNotExist as e:
                     pass
 
         except Exception as e:
             print("Dynamic refhres failed ")
-            raise e.with_traceback()
+            raise e
         else:
             print("Dynamic refhreh ok")
             pass
@@ -73,7 +77,6 @@ class ConfigManager(models.Manager):
                 control_type = control[1]
                 control_size = control[2]
                 control_name = control[3]
-                control_value_name = control[4]
 
                 # print("need Control: " + str(control_id) + " " + control_name)
 
@@ -81,14 +84,12 @@ class ConfigManager(models.Manager):
                                                         config=config,
                                                         control_id=control_id,
                                                         control_name=control_name,
-                                                        control_type=control_type,
-                                                        current_value_name=control_value_name)
+                                                        control_type=control_type)
 
         except Exception as e:
             print("Destroying invalid config! " + str(e))
             config.delete()
-            raise e.with_traceback()
-            return e
+            raise e
         else:
             print("Got config " + str(config))
             return config
@@ -108,13 +109,13 @@ class Config(models.Model):
 
 
 class ControlManager(models.Manager):
-    def fetch_control(self, ip, config, control_id, control_name, control_type, current_value_name):
+    def fetch_control(self, ip, config, control_id, control_name, control_type):
 
         def build_control():
-            return self.create(config=config,
-                                  control_id=control_id,
-                                  control_name=control_name,
-                                  value_current=None)
+            _config = config
+            _control_id = control_id
+            _control_name = control_name
+            return self.create(config=_config, control_id=_control_id, control_name=_control_name, value_stored=None)
 
         output = Adb.get_device(ip).shell("tinymix " + control_id)
 
@@ -136,8 +137,7 @@ class ControlManager(models.Manager):
                                                    parent_control=control)
                 print("bool key='" + key + "' value='" + value_name + "' name=" + control_name)
                 if key == value_name:
-                    control.value_current = value
-                    control.save()
+                    control.store_value(value)
 
         elif control_type == "ENUM":
             control = build_control()
@@ -150,8 +150,8 @@ class ControlManager(models.Manager):
             value_names = re.compile(r"(([\w.,:*-_]+[ ]?)+|([ >]?[\w.,:*-_]+)+)").findall(value_names)
 
             value_id = 0
-            for value in value_names:
-                value_name = value[0].strip(" ")
+            for name in value_names:
+                value_name = name[0].strip(" ")
                 current = False
                 if value_name.startswith(">"):
                     current = True
@@ -167,8 +167,7 @@ class ControlManager(models.Manager):
 
                 # if this was the current value for this control -- store the relationship
                 if current:
-                    control.value_current = value
-                    control.save()
+                    control.store_value(value)
 
             return control
         else:
@@ -182,35 +181,38 @@ class Control(models.Model):
     control_name = models.CharField('control name', max_length=200)
     control_id = models.IntegerField('control id')
     # note: instead of giving class name we "introspect"
-    value_current = models.ForeignKey('Value', on_delete=models.CASCADE, null=True)
-    value_dynamic = models.CharField('dynamic value', max_length=200, default=None, null=True)
+    value_stored = models.ForeignKey('Value', on_delete=models.CASCADE, null=True)
+    value_readback = models.CharField('dynamic value', max_length=200, default=None, null=True)
 
     def __str__(self):
-        return "<" + str(self.control_id) + ": " + self.control_name + " current=" + str(self.value_current) + ">"
+        return "<" + str(self.control_id) + ": " + self.control_name + " current=" + str(self.value_stored) + ">"
 
     def __init__(self, *args, **kwargs):
         super(Control, self).__init__(*args, **kwargs)
         # self.value_dynamic = None
 
+    def store_value(self, value):
+        self.value_stored = value
+        self.save()
+
     def get_label(self):
         # return self.control_name + " " + (self.value_current.value_name if self.value_current is not None else "None")
         return self.control_name
 
-    def get_dynamic_state(self):
+    def get_state(self):
         # return self.control_name + " " + (self.value_current.value_name if self.value_current is not None else "None")
-        if self.value_dynamic is None or (self.value_current.value_name == self.value_dynamic):
-            return self.value_current.value_name
+        if self.value_readback is None or (self.value_stored.value_name == self.value_readback):
+            return self.value_stored.value_name
         else:
-            return self.value_current.value_name + " --------> " + str(self.value_dynamic)
+            return self.value_stored.value_name + " --------> " + str(self.value_readback)
 
     def apply_and_save(self, value, ip=None):
         value.apply(ip)
-        self.value_current = value
+        self.value_stored = value
         self.save()
 
     def apply(self, value, ip=None):
         value.apply(ip)
-
 
 
 class ValueManager(models.Manager):
@@ -235,13 +237,11 @@ class Value(models.Model):
     def __str__(self):
         return "<" + str(self.value_id) + ": " + self.value_name + " @ " + str(self.parent.control_id) + ">"
 
-    def apply(self, ip, device_id=0):
+    def apply(self, ip=None, device_id=0):
         try:
             Adb.get_device(ip).shell("tinymix " + str(self.parent.control_id) + " " + str(self.value_id))
         except Exception as e:
-            print("apply failed ")
             raise e.with_traceback()
         else:
-            print("apply ok")
             pass
         pass

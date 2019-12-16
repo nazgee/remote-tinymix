@@ -10,7 +10,7 @@
 {% for value in control.value_set.all %}
     <input type="radio"
            name="value_pk"
-           {% if control.value_current == value %} checked {% endif %}
+           {% if control.value_stored == value %} checked {% endif %}
            value="{{ value.id }}"
            id="value{{ forloop.counter }}">
     <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>

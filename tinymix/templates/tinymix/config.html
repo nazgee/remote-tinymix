@@ -14,9 +14,17 @@
     <input type="submit" name="save" value="Save">
 </form>
 
-<ul>
+<table>
+    <tr>
+        <th>Control name</th>
+        <th>Control value</th>
+    </tr>
 {% for control in config.control_set.all %}
-    <li><a href={% url 'tinymix:control' control.id %}>{{ control.get_label }}</a>     {{ control.get_dynamic_state }}  </li>
+    <tr>
+        <td><a href={% url 'tinymix:control' control.id %}>{{ control.get_label }}</a></td>
+        <td>{{ control.get_state }}</td>
+    </tr>
 {% endfor %}
-</ul>
+
+</table>
 

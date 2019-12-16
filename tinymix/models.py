@@ -257,8 +257,15 @@ class ValueManager(models.Manager):
 class Value(models.Model):
     objects = ValueManager()
     parent = models.ForeignKey(Control, on_delete=models.CASCADE)
+
+    values_type = models.CharField('value name', max_length=20, default="ENUM")
+    values_number = models.IntegerField('values number', default=1)
+
     value_name = models.CharField('value name', max_length=200)
     value_id = models.IntegerField('value id')
+
+    int_value_min = models.IntegerField('int value min', default=-1)
+    int_value_max = models.IntegerField('int value max', default=-1)
 
     def get_label(self):
         return self.value_name
@@ -277,10 +284,3 @@ class Value(models.Model):
         else:
             pass
         pass
-
-class IntegerValue(models.Model):
-    parent = models.ForeignKey(Control, on_delete=models.CASCADE)
-    value_min = models.IntegerField('value min')
-    value_max = models.IntegerField('value max')
-    values_number = models.IntegerField('value max')
-    values = models.CharField('value name', max_length=200)

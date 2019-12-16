@@ -115,7 +115,9 @@ class ControlManager(models.Manager):
             _config = config
             _control_id = control_id
             _control_name = control_name
-            return self.create(config=_config, control_id=_control_id, control_name=_control_name, value_stored=None)
+            _control_type = control_type
+            return self.create(config=_config, control_id=_control_id, control_name=_control_name,
+                               control_type=_control_type, value_stored=None)
 
         output = Adb.get_device(ip).shell("tinymix " + control_id)
 
@@ -178,6 +180,7 @@ class ControlManager(models.Manager):
 class Control(models.Model):
     objects = ControlManager()
     config = models.ForeignKey(Config, on_delete=models.CASCADE)
+    control_type = models.CharField('type', max_length=20, default=None, null=True)
     control_name = models.CharField('control name', max_length=200)
     control_id = models.IntegerField('control id')
     # note: instead of giving class name we "introspect"

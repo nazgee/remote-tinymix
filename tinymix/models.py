@@ -179,16 +179,17 @@ class ControlManager(models.Manager):
             # LINEB Volume: 2 (range 0->5)
             match = re.compile(r"(.*?): ([\d+ ]*) \(range (.*)\)").match(output)
             value_name = match[1]
-            values_current = match[2].split(" ")
-            values_range = match[3]
+            values_current = match[2]
+            values_range = match[3].split("->")
 
-            print(value_name + " | " + str(values_current) + " | " + values_range)
+            print(value_name + " | " + str(values_current) + " | " + str(values_range))
 
-            value = Value.objects.create_value(value_id=values_current,
-                                               enum_value_name=value_name,
+            value = Value.objects.create_int_value(int_value=values_current,
+                                               int_value_min=values_range[0],
+                                               int_value_max=values_range[1],
                                                parent_control=control)
 
-            control.delete()
+            control.store_value(value)
 
             return control
         else:
@@ -213,14 +214,21 @@ class Control(models.Model):
         super(Control, self).__init__(*args, **kwargs)
         # self.value_dynamic = None
 
-    def store_value_by_name(self, value_name):
-        # fixme -- this conflicts with INT
-        value = self.value_set.get(enum_value_name=value_name)
-        self.store_value(value)
+    def store_value_by_label(self, label_name):
+        if self.get_type() == "INT":
+            value: Value = self.value_stored
+            value.set_int(label_name)
+            self.store_value(self.value_stored)
+        else:
+            value = self.value_set.get(enum_value_name=label_name)
+            self.store_value(value)
 
     def store_value(self, value):
         self.value_stored = value
         self.save()
+
+    def get_type(self):
+        return self.control_type
 
     def get_label(self):
         # return self.control_name + " " + (self.value_current.enum_value_name if self.value_current is not None else "None")
@@ -254,7 +262,7 @@ class ValueManager(models.Manager):
         return value
 
     def create_int_value(self, int_value, int_value_min, int_value_max, parent_control):
-        value = self.create(int_value, int_value_min=int_value_min, int_value_max=int_value_max, parent=parent_control, values_type="INT")
+        value = self.create(int_value=int_value, int_value_min=int_value_min, int_value_max=int_value_max, parent=parent_control, values_type="INT")
         return value
 
 
@@ -266,7 +274,7 @@ class Value(models.Model):
     values_number = models.IntegerField('values number', default=1)
 
     enum_value_name = models.CharField('value name', max_length=200)
-    value_id = models.IntegerField('value id')
+    value_id = models.IntegerField('value id', default=-1)
 
     int_value = models.CharField('value name', max_length=200, default="")
     int_value_min = models.IntegerField('int value min', default=-1)
@@ -284,6 +292,11 @@ class Value(models.Model):
         else:
             return str(self.value_id)
 
+    def set_int(self, label_name):
+        assert label_name.split(" ") == self.values_number
+        self.int_value = label_name
+        pass
+
     def get_command(self):
         return "tinymix " + str(self.parent.control_id) + " " + self.get_value()
 
@@ -298,3 +311,5 @@ class Value(models.Model):
         else:
             pass
         pass
+
+

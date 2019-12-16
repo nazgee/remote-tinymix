@@ -68,7 +68,7 @@ def config_reload(request, pk):
     elif "save" in request.POST:
         cfg = Config.objects.get(pk=pk)
         for ctrl in cfg.control_set.all():
-            ctrl.store_value_by_name(ctrl.value_readback)
+            ctrl.store_value_by_label(ctrl.value_readback)
     else:
         raise RuntimeError("This should never happen: " + str(request.POST))
 

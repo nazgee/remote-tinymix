@@ -8,6 +8,7 @@
     {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
     {% csrf_token %}
     <input type=text
+           name="ip"
            value="192.168.1.148">
     <input type="submit"
            value="Load controls">

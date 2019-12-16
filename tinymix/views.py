@@ -25,7 +25,8 @@ class IndexView(generic.ListView):
 
 
 def config_new(request):
-    cfg = Config.objects.create_config("neww", 0)
+    print(str(request.POST))
+    cfg = Config.objects.create_config(ip=request.POST['ip'], name="neww", device_id=0)
 
     if not isinstance(cfg, Config):
         print("foo")

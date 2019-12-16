@@ -4,21 +4,19 @@
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
 <form action="{% url 'tinymix:control/publish' control.id %}" method="post" onsubmit="return disableButtons(this);">
-{% csrf_token %}
-{% for value in control.value_set.all %}
-    <input type="radio"
-           name="value_pk"
-           {% if control.value_readback == value.get_label %} checked {% endif %}
-           value="{{ value.id }}"
-           id="value{{ forloop.counter }}">
-    <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>
-    <br>
-{% endfor %}
-    <input type=text
-           name="ip"
-           value={{ ipaddr }}>
-<input type="submit" name="apply" value="Apply">
-<input type="submit" name="apply_and_save" value="Apply & Save in config">
+    {% csrf_token %}
+    {% for value in control.value_set.all %}
+        <input type="radio"
+               name="value_pk"
+               {% if control.value_readback == value.get_label %} checked {% endif %}
+               value="{{ value.id }}"
+               id="value{{ forloop.counter }}">
+        <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>
+        <br>
+    {% endfor %}
+    <input type=text name="ip" value={{ ipaddr }}>
+    <input type="submit" name="apply" value="Apply">
+    <input type="submit" name="apply_and_save" value="Apply & Save in config">
 </form>
 
 

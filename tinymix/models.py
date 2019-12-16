@@ -136,7 +136,7 @@ class ControlManager(models.Manager):
 
             for key in switcher:
                 value = Value.objects.create_value(value_id=switcher[key],
-                                                   value_name=key,
+                                                   enum_value_name=key,
                                                    parent_control=control)
                 # print("bool key='" + key + "' value='" + value_name + "' name=" + control_name)
                 if key == value_name:
@@ -164,7 +164,7 @@ class ControlManager(models.Manager):
                 #     control))
 
                 value = Value.objects.create_value(value_id=value_id,
-                                                   value_name=value_name,
+                                                   enum_value_name=value_name,
                                                    parent_control=control)
                 value_id = value_id + 1
 
@@ -185,7 +185,7 @@ class ControlManager(models.Manager):
             print(value_name + " | " + str(values_current) + " | " + values_range)
 
             value = Value.objects.create_value(value_id=values_current,
-                                               value_name=value_name,
+                                               enum_value_name=value_name,
                                                parent_control=control)
 
             control.delete()
@@ -214,7 +214,8 @@ class Control(models.Model):
         # self.value_dynamic = None
 
     def store_value_by_name(self, value_name):
-        value = self.value_set.get(value_name=value_name)
+        # fixme -- this conflicts with INT
+        value = self.value_set.get(enum_value_name=value_name)
         self.store_value(value)
 
     def store_value(self, value):
@@ -222,7 +223,7 @@ class Control(models.Model):
         self.save()
 
     def get_label(self):
-        # return self.control_name + " " + (self.value_current.value_name if self.value_current is not None else "None")
+        # return self.control_name + " " + (self.value_current.enum_value_name if self.value_current is not None else "None")
         return self.control_name
 
     def get_label_stored(self):
@@ -248,8 +249,8 @@ class Control(models.Model):
 
 
 class ValueManager(models.Manager):
-    def create_value(self, value_id, value_name, parent_control, values_type="ENUM"):
-        value = self.create(value_id=value_id, value_name=value_name, parent=parent_control, values_type=values_type)
+    def create_value(self, value_id, enum_value_name, parent_control, values_type="ENUM"):
+        value = self.create(value_id=value_id, enum_value_name=enum_value_name, parent=parent_control, values_type=values_type)
         return value
 
     def create_int_value(self, int_value, int_value_min, int_value_max, parent_control):
@@ -264,7 +265,7 @@ class Value(models.Model):
     values_type = models.CharField('value name', max_length=20, default="ENUM")
     values_number = models.IntegerField('values number', default=1)
 
-    value_name = models.CharField('value name', max_length=200)
+    enum_value_name = models.CharField('value name', max_length=200)
     value_id = models.IntegerField('value id')
 
     int_value = models.CharField('value name', max_length=200, default="")
@@ -275,7 +276,7 @@ class Value(models.Model):
         if self.values_type == "INT":
             return self.int_value
         else:
-            return self.value_name
+            return self.enum_value_name
 
     def get_value(self):
         if self.values_type == "INT":
@@ -287,7 +288,7 @@ class Value(models.Model):
         return "tinymix " + str(self.parent.control_id) + " " + self.get_value()
 
     def __str__(self):
-        return "<" + str(self.value_id) + ": " + self.value_name + " @ " + str(self.parent.control_id) + ">"
+        return "<" + str(self.value_id) + ": " + self.enum_value_name + " @ " + str(self.parent.control_id) + ">"
 
     def apply(self, ip=None, device_id=0):
         try:

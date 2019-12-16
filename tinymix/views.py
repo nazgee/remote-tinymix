@@ -6,7 +6,7 @@ from django.template import loader
 from django.urls import reverse
 from django.views import generic
 
-from tinymix.models import Config, Control, Value, ConfigManager
+from tinymix.models import Config, Control, Value, ConfigManager, Adb
 
 
 class IndexView(generic.ListView):
@@ -14,25 +14,28 @@ class IndexView(generic.ListView):
     template_name = 'tinymix/index.html'
     context_object_name = 'latest_configs_list'
 
+
     def render(self, request, context: dict = {}):
         context[self.context_object_name] = self.get_queryset()
-
         return render(request, self.template_name, context)
 
     def get_queryset(self):
         """Return the last five published Configs."""
         return Config.objects.order_by('-created_date')[:5]
 
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['ipaddr'] = Adb.ip
+        return context
+
 
 def config_new(request):
-    print(str(request.POST))
-    cfg = Config.objects.create_config(ip=request.POST['ip'], name="neww", device_id=0)
+    cfg = Config.objects.create_config(ip=request.POST['ip'], name=request.POST['name'], device_id=0)
 
     if not isinstance(cfg, Config):
         print("foo")
         return IndexView().render(request, context={"error_message": "Config creation failed! " + str(cfg)})
-
-    cfg.delete()
 
     return HttpResponseRedirect(reverse('tinymix:index'))
 
@@ -41,6 +44,16 @@ class DetailView(generic.DetailView):
     model = Config
     template_name = 'tinymix/config.html'
 
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['ipaddr'] = Adb.ip
+        return context
+
+
+def config_reload(request, pk):
+    Config.objects.dynamic_refresh(ip=request.POST['ip'], device_id=0, config_pk=pk)
+    return HttpResponseRedirect(reverse('tinymix:config', args=(pk,)))
 
 # def config(request, config_id):
 #     config = get_object_or_404(Config, pk=config_id)
@@ -65,11 +78,14 @@ def control_publish(request, control_id):
             'error_message': "You didn't select a value.",
         })
     else:
-        ctrl.value_current = val
-        ctrl.save()
+        if "apply_and_save" in request.POST:
+            ctrl.apply_and_save(val)
+        else:
+            ctrl.apply(val)
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
+        Config.objects.dynamic_refresh(device_id=0, config_pk=ctrl.config.pk)
         return HttpResponseRedirect(reverse('tinymix:config', args=(ctrl.config.pk,)))
         # return render(request, 'tinymix/control_edit.html', {'value': val})
 

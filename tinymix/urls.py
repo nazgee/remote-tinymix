@@ -8,6 +8,8 @@ urlpatterns = [
     path('', views.IndexView.as_view(), name='index'),
     # ex: /tinymix/config/5
     path('config/<int:pk>/', views.DetailView.as_view(), name='config'),
+    # ex: /tinymix/config/reload/5
+    path('config/reload/<int:pk>/', views.config_reload, name='config/reload'),
     # ex: /tinymix/config_new
     path('config/new/', views.config_new, name='config/new'),
     # ex: /tinymix/control/5

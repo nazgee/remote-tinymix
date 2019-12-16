@@ -1,9 +1,22 @@
-{{ config }}
+<a href={% url 'tinymix:index' %}> back to index</a>
 
 <h1>{{ config.name }}</h1>
 {{ config.created_date }}
+
+<form action="{% url 'tinymix:config/reload' config.id %}" method="post">
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+    {% csrf_token %}
+    <input type=text
+           name="ip"
+           value={{ ipaddr }}>
+    <input type="submit" name="download" value="Download">
+    <input type="submit" name="upload" value="Upload">
+    <input type="submit" name="save" value="Save">
+</form>
+
 <ul>
 {% for control in config.control_set.all %}
-    <li><a href={% url 'tinymix:control' control.id %}>{{ control }}</a></li>
+    <li><a href={% url 'tinymix:control' control.id %}>{{ control.get_label }}</a>     {{ control.get_dynamic_state }}  </li>
 {% endfor %}
 </ul>
+

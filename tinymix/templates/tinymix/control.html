@@ -10,12 +10,14 @@
 {% for value in control.value_set.all %}
     <input type="radio"
            name="value_pk"
+           {% if control.value_current == value %} checked {% endif %}
            value="{{ value.id }}"
            id="value{{ forloop.counter }}">
-    <label for="value{{ forloop.counter }}"> {{ value }}</label>
+    <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>
     <br>
 {% endfor %}
-<input type="submit" value="Apply">
+<input type="submit" name="apply" value="Apply">
+<input type="submit" name="apply_and_save" value="Apply & Save in config">
 </form>
 
 

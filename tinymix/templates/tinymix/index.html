@@ -9,9 +9,12 @@
     {% csrf_token %}
     <input type=text
            name="ip"
-           value="192.168.1.148">
+           value={{ ipaddr }}>
+    <input type=text
+           name="name"
+           value="PutConfigNameHere">
     <input type="submit"
-           value="Load controls">
+           value="Download">
 </form>
 
 <h1>Load config</h1>
@@ -25,6 +28,6 @@
     {% endfor %}
     </ul>
 {% else %}
-    <p>No Configs available.</p>
+    <p>No Configs available - load one!</p>
 {% endif %}
 

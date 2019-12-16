@@ -11,7 +11,7 @@ import re
 class Adb:
     client = AdbClient(host="127.0.0.1", port=5037)
     device = None
-    ip = "192.168.1.147"
+    ip = "192.168.1.148"
 
     def get_device(new_ip):
         if (new_ip is not None) and ((Adb.ip != new_ip) or (Adb.device is None)):
@@ -25,16 +25,13 @@ class Adb:
             return Adb.device
         return Adb.device
 
+
 def fetch_controls(ip, device_id):
+    # ('0', 'ENUM', '1', 'MIC Bias VCM Bandgap', 'High Performance')
     try:
         output = Adb.get_device(ip).shell("tinymix -D " + str(device_id))
-
-        # max98091-audio
-        mixer = re.compile("Mixer name: '(.*)'").match(output)[1]
         controls = re.compile(r"^([0-9]+)\W+([A-Z]+)\W+([0-9]+)\W+([\w ]+?)[ \t]{2,}(.*)$",
                               re.MULTILINE).findall(output)
-
-        # ('0', 'ENUM', '1', 'MIC Bias VCM Bandgap', 'High Performance')
         return controls
 
     except Exception as e:
@@ -64,7 +61,6 @@ class ConfigManager(models.Manager):
             print("Dynamic refhreh ok")
             pass
 
-
     def create_config(self, ip, name, device_id):
         config = self.create(name=name, device_id=device_id, created_date=timezone.now())
 
@@ -87,8 +83,6 @@ class ConfigManager(models.Manager):
                                                         control_name=control_name,
                                                         control_type=control_type,
                                                         current_value_name=control_value_name)
-
-
 
         except Exception as e:
             print("Destroying invalid config! " + str(e))
@@ -115,17 +109,21 @@ class Config(models.Model):
 
 class ControlManager(models.Manager):
     def fetch_control(self, ip, config, control_id, control_name, control_type, current_value_name):
-        if control_type == "BOOL":
-            control = self.create(config=config,
+
+        def build_control():
+            return self.create(config=config,
                                   control_id=control_id,
                                   control_name=control_name,
                                   value_current=None)
-            output = Adb.get_device(ip).shell("tinymix " + control_id)
+
+        output = Adb.get_device(ip).shell("tinymix " + control_id)
+
+        if control_type == "BOOL":
+            control = build_control()
 
             # LINEA Mixer IN5 Switch: Off
             match = re.compile(r"(.*?:)(.*)").match(output)
-            control_name = match[1].strip(" ")
-            control_current = match[2].strip(" ")
+            value_name = match[2].strip(" ")
 
             switcher = {
                 "Off": 0,
@@ -136,28 +134,23 @@ class ControlManager(models.Manager):
                 value = Value.objects.create_value(value_id=switcher[key],
                                                    value_name=key,
                                                    parent_control=control)
-                print("bool key='" + key + "' value='" + control_current + "' name=" + control_name)
-                if key == control_current:
+                print("bool key='" + key + "' value='" + value_name + "' name=" + control_name)
+                if key == value_name:
                     control.value_current = value
                     control.save()
 
         elif control_type == "ENUM":
-            control = self.create(config=config,
-                                  control_id=control_id,
-                                  control_name=control_name,
-                                  value_current=None)
-            output = Adb.get_device(ip).shell("tinymix " + control_id)
+            control = build_control()
 
             # MIC Bias VCM Bandgap:   Low Power       >High Performance
             match = re.compile(r"(.*?:)(.*)").match(output)
-            control_name = match[1]
-            control_values = match[2]
+            value_names = match[2]
 
             #    Low Power       >High Performance
-            values = re.compile(r"(([\w.,:*-_]+[ ]?)+|([ >]?[\w.,:*-_]+)+)").findall(control_values)
+            value_names = re.compile(r"(([\w.,:*-_]+[ ]?)+|([ >]?[\w.,:*-_]+)+)").findall(value_names)
 
             value_id = 0
-            for value in values:
+            for value in value_names:
                 value_name = value[0].strip(" ")
                 current = False
                 if value_name.startswith(">"):

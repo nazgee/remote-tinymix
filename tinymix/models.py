@@ -84,7 +84,8 @@ class ConfigManager(models.Manager):
                                                         config=config,
                                                         control_id=control_id,
                                                         control_name=control_name,
-                                                        control_type=control_type)
+                                                        control_type=control_type,
+                                                        control_size=control_size)
 
         except Exception as e:
             print("Destroying invalid config! " + str(e))
@@ -109,7 +110,7 @@ class Config(models.Model):
 
 
 class ControlManager(models.Manager):
-    def fetch_control(self, ip, config, control_id, control_name, control_type):
+    def fetch_control(self, ip, config, control_id, control_name, control_type, control_size):
 
         def build_control():
             _config = config
@@ -170,6 +171,24 @@ class ControlManager(models.Manager):
                 # if this was the current value for this control -- store the relationship
                 if current:
                     control.store_value(value)
+
+        elif control_type == "INT":
+            control = build_control()
+
+            # 54      INT     2       Receiver Volume                          21 21
+            # LINEB Volume: 2 (range 0->5)
+            match = re.compile(r"(.*?): ([\d+ ]*) \(range (.*)\)").match(output)
+            value_name = match[1]
+            values_current = match[2].split(" ")
+            values_range = match[3]
+
+            print(value_name + " | " + str(values_current) + " | " + values_range)
+
+            value = Value.objects.create_value(value_id=values_current,
+                                               value_name=value_name,
+                                               parent_control=control)
+
+            control.delete()
 
             return control
         else:
@@ -258,3 +277,10 @@ class Value(models.Model):
         else:
             pass
         pass
+
+class IntegerValue(models.Model):
+    parent = models.ForeignKey(Control, on_delete=models.CASCADE)
+    value_min = models.IntegerField('value min')
+    value_max = models.IntegerField('value max')
+    values_number = models.IntegerField('value max')
+    values = models.CharField('value name', max_length=200)

@@ -182,9 +182,10 @@ class ControlManager(models.Manager):
             values_current = match[2]
             values_range = match[3].split("->")
 
-            print(value_name + " | " + str(values_current) + " | " + str(values_range))
+            print(value_name + " | " + str(values_current) + " | " + str(values_range) + " == " + str(control_size))
 
             value = Value.objects.create_int_value(int_value=values_current,
+                                               values_number=control_size,
                                                int_value_min=values_range[0],
                                                int_value_max=values_range[1],
                                                parent_control=control)
@@ -227,6 +228,9 @@ class Control(models.Model):
         self.value_stored = value
         self.save()
 
+    def get_stored(self):
+        return self.value_stored
+
     def get_type(self):
         return self.control_type
 
@@ -261,8 +265,8 @@ class ValueManager(models.Manager):
         value = self.create(value_id=value_id, enum_value_name=enum_value_name, parent=parent_control, values_type=values_type)
         return value
 
-    def create_int_value(self, int_value, int_value_min, int_value_max, parent_control):
-        value = self.create(int_value=int_value, int_value_min=int_value_min, int_value_max=int_value_max, parent=parent_control, values_type="INT")
+    def create_int_value(self, int_value, int_value_min, int_value_max, parent_control, values_number):
+        value = self.create(int_value=int_value, int_value_min=int_value_min, int_value_max=int_value_max, parent=parent_control, values_type="INT", values_number=values_number)
         return value
 
 
@@ -293,7 +297,7 @@ class Value(models.Model):
             return str(self.value_id)
 
     def set_int(self, label_name):
-        assert label_name.split(" ") == self.values_number
+        assert len(label_name.split(" ")) == self.values_number
         self.int_value = label_name
         pass
 

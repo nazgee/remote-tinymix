@@ -6,6 +6,10 @@
 <form action="{% url 'tinymix:control/publish' control.id %}" method="post" onsubmit="return disableButtons(this);">
     {% csrf_token %}
     {%  if control.control_type == "INT" %}
+        <p>Max {{ control.get_stored.values_number }} INT values in range
+            < {{ control.get_stored.int_value_min }}..{{ control.get_stored.int_value_max }}>
+            separated with space
+        </p>
         <input type=text name="value_int" value={{ control.get_label_stored }}>
         <br>
     {% else %}

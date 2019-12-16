@@ -16,6 +16,9 @@
     <label for="value{{ forloop.counter }}"> {{ value.get_label }}</label>
     <br>
 {% endfor %}
+    <input type=text
+           name="ip"
+           value={{ ipaddr }}>
 <input type="submit" name="apply" value="Apply">
 <input type="submit" name="apply_and_save" value="Apply & Save in config">
 </form>

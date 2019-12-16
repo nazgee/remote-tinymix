@@ -17,12 +17,14 @@
 <table>
     <tr>
         <th>Control name</th>
-        <th>Control value</th>
+        <th>Config value</th>
+        <th>Current value</th>
     </tr>
 {% for control in config.control_set.all %}
     <tr>
         <td><a href={% url 'tinymix:control' control.id %}>{{ control.get_label }}</a></td>
-        <td>{{ control.get_state }}</td>
+        <td align="right">{{ control.get_label_stored }}</td>
+        <td>{{ control.get_label_readback }}</td>
     </tr>
 {% endfor %}
 

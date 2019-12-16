@@ -24,7 +24,7 @@ class Adb:
             try:
                 Adb.device.root()
             except Exception as e:
-                raise e
+                pass
             else:
                 return Adb.device
         elif Adb.device is None:
@@ -199,12 +199,14 @@ class Control(models.Model):
         # return self.control_name + " " + (self.value_current.value_name if self.value_current is not None else "None")
         return self.control_name
 
-    def get_state(self):
-        # return self.control_name + " " + (self.value_current.value_name if self.value_current is not None else "None")
-        if self.value_readback is None or (self.value_stored.value_name == self.value_readback):
-            return self.value_stored.value_name
+    def get_label_stored(self):
+        return self.value_stored.value_name
+
+    def get_label_readback(self):
+        if (self.value_readback is None) or (self.value_readback == self.get_label_stored()):
+            return "="
         else:
-            return self.value_stored.value_name + " --------> " + str(self.value_readback)
+            return str(self.value_readback)
 
     def apply_and_save(self, value, ip=None):
         value.apply(ip)

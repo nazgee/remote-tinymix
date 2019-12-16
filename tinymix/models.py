@@ -226,7 +226,7 @@ class Control(models.Model):
         return self.control_name
 
     def get_label_stored(self):
-        return self.value_stored.value_name
+        return self.value_stored.get_label()
 
     def get_label_readback(self):
         if (self.value_readback is None) or (self.value_readback == self.get_label_stored()):
@@ -240,17 +240,20 @@ class Control(models.Model):
 
     def apply_stored(self, ip=None):
         self.value_stored.apply(ip)
-        self.value_readback = self.value_stored.value_name
+        self.value_readback = self.value_stored.get_label()
 
     def apply(self, value, ip=None):
         value.apply(ip)
-        self.value_readback = value.value_name
+        self.value_readback = value.get_label()
 
 
 class ValueManager(models.Manager):
-    def create_value(self, value_id, value_name, parent_control):
-        value = self.create(value_id=value_id, value_name=value_name, parent=parent_control)
+    def create_value(self, value_id, value_name, parent_control, values_type="ENUM"):
+        value = self.create(value_id=value_id, value_name=value_name, parent=parent_control, values_type=values_type)
+        return value
 
+    def create_int_value(self, int_value, int_value_min, int_value_max, parent_control):
+        value = self.create(int_value, int_value_min=int_value_min, int_value_max=int_value_max, parent=parent_control, values_type="INT")
         return value
 
 
@@ -264,21 +267,31 @@ class Value(models.Model):
     value_name = models.CharField('value name', max_length=200)
     value_id = models.IntegerField('value id')
 
+    int_value = models.CharField('value name', max_length=200, default="")
     int_value_min = models.IntegerField('int value min', default=-1)
     int_value_max = models.IntegerField('int value max', default=-1)
 
     def get_label(self):
-        return self.value_name
+        if self.values_type == "INT":
+            return self.int_value
+        else:
+            return self.value_name
+
+    def get_value(self):
+        if self.values_type == "INT":
+            return self.int_value
+        else:
+            return str(self.value_id)
 
     def get_command(self):
-        return "tinymix " + str(self.parent.control_id) + " " + str(self.value_id)
+        return "tinymix " + str(self.parent.control_id) + " " + self.get_value()
 
     def __str__(self):
         return "<" + str(self.value_id) + ": " + self.value_name + " @ " + str(self.parent.control_id) + ">"
 
     def apply(self, ip=None, device_id=0):
         try:
-            Adb.get_device(ip).shell("tinymix " + str(self.parent.control_id) + " " + str(self.value_id))
+            Adb.get_device(ip).shell(self.get_command())
         except Exception as e:
             raise e.with_traceback()
         else:

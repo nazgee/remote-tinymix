@@ -11,7 +11,7 @@ import re
 class Adb:
     client = AdbClient(host="127.0.0.1", port=5037)
     device = None
-    ip = "192.168.1.148"
+    ip = "172.21.114.90"
 
     def get_device(new_ip):
         if Adb.ip != new_ip:
